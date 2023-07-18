@@ -36,7 +36,6 @@ def read_enterprise_config(name):
     value = root[0].text
     return value
 
-
 if __name__ == "__main__":
     MODEL = connect_to_openai()
     hint = "# write a program to generate prime numbers in python"
@@ -46,3 +45,4 @@ if __name__ == "__main__":
     code = get_response(hint, MODEL, lang)
     code = hint + "\n" + code
     print(code)
+    
