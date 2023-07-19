@@ -7,8 +7,11 @@ app = Flask(__name__)
  
 # home route that returns below text when root url is accessed
 @app.route("/")
-def suggestion():
-    return code_suggest()
+def suggest():
+    lang = request.args.get('lang')
+    instructions = request.args.get('instructions')
+    hint = request.args.get('hint')
+    return code_suggest(lang, instructions, hint)
  
 if __name__ == '__main__': 
    app.run()

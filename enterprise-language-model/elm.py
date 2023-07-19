@@ -6,7 +6,7 @@ import openai
 def connect_to_openai():
     '''method to connect with OpenAI API'''
     openai.organization = "org-WTPCAZdWARkJoItCjU9VV1WE"
-    openai.api_key = ""
+    openai.api_key = "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"
     openai.Model.list()
     model_name = "gpt-3.5-turbo"
     return model_name
@@ -51,11 +51,11 @@ def read_lang_config(tag_value, lang_input):
     return match_replace_list
 
 
-def code_suggest():
+def code_suggest(lang, instructions, hint):
     MODEL = connect_to_openai()
-    LANG = "python"
-    INSTRUCTION = "only code in " + LANG + ", do not elaborate, do not provide example or comment"
-    HINT = "#write a program to draw a circle"
+    LANG = lang
+    INSTRUCTION = "only code in " + LANG + ", do not elaborate, do not provide example or comment" + instructions
+    HINT = hint
     code = get_response(MODEL, INSTRUCTION, HINT)
     INSTRUCTION = "elaborate"
     '''description = get_response(MODEL, INSTRUCTION, "Elaborate " + HINT)'''
@@ -63,4 +63,5 @@ def code_suggest():
     code=enterprise_finetuning(code, attrib)
     return code
 
-code_suggest()
+'''code = code_suggest('sql','','Write a query to find top 10 rows in a table')
+print(code)'''
