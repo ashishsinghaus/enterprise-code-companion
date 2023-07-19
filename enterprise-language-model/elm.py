@@ -6,7 +6,7 @@ import openai
 def connect_to_openai():
     '''method to connect with OpenAI API'''
     openai.organization = "org-WTPCAZdWARkJoItCjU9VV1WE"
-    openai.api_key = "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"
+    openai.api_key = ""
     openai.Model.list()
     model_name = "gpt-3.5-turbo"
     return model_name
@@ -62,3 +62,5 @@ def code_suggest():
     attrib = read_lang_config("name", LANG)
     code=enterprise_finetuning(code, attrib)
     return code
+
+code_suggest()
