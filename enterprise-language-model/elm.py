@@ -36,6 +36,16 @@ def enterprise_finetuning(code_input, match_replace):
                         code_input=code_input.replace(key, value)
     return code_input
 
+def get_config_match(match_input, match_replace):
+    '''method to finetune the suggested code for enterprise'''
+    match=''
+    for match in match_replace:
+            if str(match) !='{}':
+                for key, value in match.items():
+                    if key == match_input:
+                        match=value
+    return match
+
 def read_lang_config(tag_value, lang_input):
     '''method to read language configurations'''
     current_dir = os.path.dirname(__file__)
@@ -57,11 +67,17 @@ def code_suggest(lang, instructions, hint):
     INSTRUCTION = "only code in " + LANG + ", do not elaborate, do not provide example or comment" + instructions
     HINT = hint
     code = get_response(MODEL, INSTRUCTION, HINT)
+    attrib = read_lang_config("match", LANG)
+    enterprise_name=get_config_match('initial_comment', attrib)
+    code = enterprise_name + '\n' + code
     INSTRUCTION = "elaborate"
     '''description = get_response(MODEL, INSTRUCTION, "Elaborate " + HINT)'''
-    attrib = read_lang_config("name", LANG)
+    attrib = read_lang_config("match", LANG)
+    code=enterprise_finetuning(code, attrib)
+    LANG='enterprise'
+    attrib = read_lang_config("match", LANG)
     code=enterprise_finetuning(code, attrib)
     return code
 
-code = code_suggest('sql','','Write a query to find top 10 rows in a table')
+code = code_suggest('python','','')
 print(code)
