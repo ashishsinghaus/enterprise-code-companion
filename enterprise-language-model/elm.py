@@ -6,7 +6,7 @@ import openai
 def connect_to_openai():
     '''method to connect with OpenAI API'''
     openai.organization = "org-WTPCAZdWARkJoItCjU9VV1WE"
-    openai.api_key = "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"
+    openai.api_key = ""
     openai.Model.list()
     model_name = "gpt-3.5-turbo"
     return model_name
@@ -63,5 +63,5 @@ def code_suggest(lang, instructions, hint):
     code=enterprise_finetuning(code, attrib)
     return code
 
-'''code = code_suggest('sql','','Write a query to find top 10 rows in a table')
-print(code)'''
+code = code_suggest('sql','','Write a query to find top 10 rows in a table')
+print(code)
