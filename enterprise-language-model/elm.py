@@ -1,4 +1,5 @@
 '''import librarries'''
+import re
 import os
 import xml.etree.ElementTree as ET
 import openai
@@ -61,23 +62,43 @@ def read_lang_config(tag_value, lang_input):
     return match_replace_list
 
 
-def code_suggest(lang, instructions, hint):
+def remove_passwords(hint):
+    pattern = r"\b[A-Za-z0-9@#$%^&+=]{8,}\b"
+    return re.sub(pattern, "password", hint)
+
+def remove_api_keys(hint):
+    pattern = r"[A-Za-z0-9]{32}"
+    return re.sub(pattern, "sample-key-", hint)
+
+def remove_bank_details(hint):
+    pattern = r"\b(?:\d{4}-){3}\d{4}\b|\b(?:\d{4} ){3}\d{4}\b|\b(?:\d{4}\.){3}\d{4}\b"
+    return re.sub(pattern, "", hint)
+
+def remove_personal_details(hint):
+    pattern = r'\b(\d{4}-\d{2}-\d{2}|\d{3}-\d{2}-\d{4}|(\d{3}\s?){3}|\d{4}\s\d{4}\s\d{4}\s\d{4})\b'
+    return re.sub(pattern, '[REDACTED]', hint)
+
+def code_suggest(lang, hint):
     MODEL = connect_to_openai()
     LANG = lang
-    INSTRUCTION = "only code in " + LANG + ", do not elaborate, do not provide example or comment" + instructions
-    HINT = hint
+    attrib = read_lang_config("match", LANG)
+    hint_prefix=get_config_match('hint_prefix', attrib)
+    INSTRUCTION = "only code in " + LANG + ", do not elaborate, do not provide example or comment"
+    HINT = hint_prefix + hint
+    #HINT=hint
+    #HINT = remove_api_keys(HINT)
+    #HINT = remove_passwords(HINT)
     code = get_response(MODEL, INSTRUCTION, HINT)
-    attrib = read_lang_config("match", LANG)
-    enterprise_name=get_config_match('initial_comment', attrib)
-    code = enterprise_name + '\n' + code
-    INSTRUCTION = "elaborate"
-    '''description = get_response(MODEL, INSTRUCTION, "Elaborate " + HINT)'''
-    attrib = read_lang_config("match", LANG)
+    #attrib = read_lang_config("match", LANG)
+    enterprise_name=get_config_match('instructions', attrib)
+    #code = enterprise_name + '\n' + code
+    #attrib = read_lang_config("match", LANG)
     code=enterprise_finetuning(code, attrib)
     LANG='enterprise'
     attrib = read_lang_config("match", LANG)
     code=enterprise_finetuning(code, attrib)
     return code
 
-code = code_suggest('python','','')
+code = code_suggest('sql','get second highest salary record from table emp')
+code = code_suggest('sql','rewrite this query in optimized form ' + code )
 print(code)

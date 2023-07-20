@@ -9,9 +9,8 @@ app = Flask(__name__)
 @app.route("/")
 def suggest():
     lang = request.args.get('lang')
-    instructions = request.args.get('instructions')
     hint = request.args.get('hint')
-    return code_suggest(lang, instructions, hint)
+    return code_suggest(lang, hint)
  
 if __name__ == '__main__': 
    app.run()
