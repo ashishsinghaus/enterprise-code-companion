@@ -99,6 +99,3 @@ def code_suggest(lang, hint):
     code=enterprise_finetuning(code, attrib)
     return code
 
-code = code_suggest('sql','get second highest salary record from table emp')
-code = code_suggest('sql','rewrite this query in optimized form ' + code )
-print(code)
