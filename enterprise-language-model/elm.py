@@ -5,19 +5,6 @@ import xml.etree.ElementTree as ET
 import openai
 import ast
 
-def find_function_names(code):
-    tree = ast.parse(code)
-    function_names = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.FunctionDef):
-            function_names.append(node.name)
-    return function_names
-
-def find_sp_names(sql_script):
-    pattern = r'CREATE\s+PROCEDURE\s+(\w+)'
-    stored_procedures = re.findall(pattern, sql_script, re.IGNORECASE)
-    return stored_procedures
-
 def connect_to_openai():
     '''method to connect with OpenAI API'''
     openai.organization = "org-WTPCAZdWARkJoItCjU9VV1WE"
@@ -53,13 +40,13 @@ def enterprise_finetuning(code_input, match_replace):
 
 def get_config_match(match_input, match_replace):
     '''method to finetune the suggested code for enterprise'''
-    match=''
+    matched=''
     for match in match_replace:
             if str(match) !='{}':
                 for key, value in match.items():
                     if key == match_input:
-                        match=value
-    return str(match)
+                        matched=value
+    return str(matched)
 
 def read_lang_config(tag_value, lang_input):
     '''method to read language configurations'''
@@ -75,6 +62,29 @@ def read_lang_config(tag_value, lang_input):
         match_replace_list.append(match_replace)
     return match_replace_list
 
+def refine_methods(enterprise_name, lang, code):
+    if lang=='python':
+        tree = ast.parse(code)
+        function_names = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef):
+                code = code.replace(node.name, enterprise_name.lower() + '_fn_' + node.name)
+    elif lang=='sql':
+        pattern = r'CREATE\s+FUNCTION\s+(\w+)'
+        function_names = re.findall(pattern, code, re.IGNORECASE)
+        for fname in function_names:
+            code = code.replace(fname, enterprise_name.lower() + '_fn_' + fname)
+        pattern = r'CREATE\s+PROCEDURE\s+(\w+)'
+        sp_names = re.findall(pattern, code, re.IGNORECASE)
+        for sname in sp_names:
+            code = code.replace(sname, enterprise_name.lower() + '_sp_' + sname)
+
+    return code
+
+def find_sp_names(sql_script):
+    pattern = r'CREATE\s+PROCEDURE\s+(\w+)'
+    stored_procedures = re.findall(pattern, sql_script, re.IGNORECASE)
+    return stored_procedures
 
 def remove_passwords(hint):
     pattern = r"\b[A-Za-z0-9@#$%^&+=]{8,}\b"
@@ -93,37 +103,38 @@ def remove_personal_details(hint):
     return re.sub(pattern, '[REDACTED]', hint)
 
 def code_suggest(lang, hint):
-    MODEL = connect_to_openai()
-    LANG = lang
-    attrib = read_lang_config("match", LANG)
-    #hint_prefix=get_config_match('hint_prefix', attrib)
-    INSTRUCTION = "only code in " + LANG + ", do not elaborate, do not provide example or comment"
-    #HINT = hint_prefix + hint
-    HINT=hint
+    model = connect_to_openai()
+
+    attrib = read_lang_config("match", lang)
+    instructions=get_config_match('instructions', attrib)
+    attrib = read_lang_config("match", lang)
+    instructions=instructions.replace('lang_name', lang)
+
+    attrib = read_lang_config("match", lang)
+    hint_prefix=get_config_match('hint_prefix', attrib)
+    hint = hint_prefix + hint
+
+    code = get_response(model, instructions, hint)
+
+
+    attrib = read_lang_config("match", lang)
+    code = enterprise_finetuning(code, attrib)
+
+    attrib = read_lang_config("match", 'enterprise')
+    enterprise_name = get_config_match('enterprise_name', attrib)
+
+    code = refine_methods(enterprise_name, lang, code)
+
+    attrib = read_lang_config("match", lang)
+    initial_comment=get_config_match('initial_comment', attrib)
+    
+    initial_comment=initial_comment.replace('enterprise_name', enterprise_name)
+    code = initial_comment + '\n' + code
+
     #HINT = remove_api_keys(HINT)
     #HINT = remove_passwords(HINT)
-    code = get_response(MODEL, INSTRUCTION, HINT)
-    LANG='enterprise'
-    attrib = read_lang_config("match", LANG)
-    enterprise_name=get_config_match('enterprise_name', attrib)
-    #code = enterprise_name + '\n' + code
-    #attrib = read_lang_config("match", LANG)
-    #code=enterprise_finetuning(code, attrib)
-    LANG='enterprise'
-    attrib = read_lang_config("match", LANG)
-    code=enterprise_finetuning(code, attrib)
-    LANG=lang
-    if(LANG=='python'):
-        print('ho')
-        function_names = find_function_names(code)
-        for fname in function_names:
-            code = code.replace(fname, enterprise_name.lower() + '_fn_' + fname)
-
-    sp_names = find_sp_names(code)
-    for sname in sp_names:
-        code = code.replace(sname, enterprise_name.lower() + '_sp_' + sname)
 
     return code
 
-code = code_suggest('sql','write a stored procedure to check prime numbers')
-print(code)
+gen_code = code_suggest('sql','query to select employees from employee table for employee present in compamny table')
+print(gen_code)
