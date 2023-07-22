@@ -130,6 +130,15 @@ def lemmatize_txt(txt):
         sentence.append(word.lemma_)
     return " ".join(sentence)
 
+def tokenize_sentence(hint):
+    nlp = spacy.load('en_core_web_sm')
+    doc = nlp(hint)
+    filtered_tokens = [token.text for token in doc if token.is_stop == False]
+    filtered_hint=''
+    for ftoken in filtered_tokens:
+        filtered_hint=filtered_hint + ' ' + ftoken
+    return filtered_hint
+
 def code_suggest(lang, hint):
     model = connect_to_openai()
 
@@ -138,18 +147,20 @@ def code_suggest(lang, hint):
     attrib = read_lang_config("match", lang)
     instructions=instructions.replace('lang_name', lang)
 
-
     hint = clean_hint(hint)
     hint = lemmatize_txt(hint)
-    hint = remove_passwords(hint)
+    #hint = remove_passwords(hint)
     hint=change_named_entity(hint)
 
     attrib = read_lang_config("match", lang)
     hint_prefix=get_config_match('hint_prefix', attrib)
     hint = hint_prefix + hint
 
-    code = get_response(model, instructions, hint)
+    #hint = tokenize_sentence(hint)
 
+    print(hint)
+
+    code = get_response(model, instructions, hint)
 
     attrib = read_lang_config("match", lang)
     code = enterprise_finetuning(code, attrib)
@@ -161,14 +172,11 @@ def code_suggest(lang, hint):
 
     attrib = read_lang_config("match", lang)
     initial_comment=get_config_match('initial_comment', attrib)
-    
+
     initial_comment=initial_comment.replace('enterprise_name', enterprise_name)
     code = initial_comment + '\n' + code
-
     #HINT = remove_api_keys(HINT)
-  
-
     return code
 
-gen_code = code_suggest('sql','query to selecting name from person table where key=4PTLNsipEMroCEcQPkp2T3BlbkFJneCrVpBREkV4VPBMH9GK')
+gen_code = code_suggest('python','write code to find the file extension')
 print(gen_code)
