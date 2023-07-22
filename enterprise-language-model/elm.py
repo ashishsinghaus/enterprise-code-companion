@@ -6,6 +6,7 @@ import openai
 import ast
 import nltk
 import spacy
+import string
 
 nlp = spacy.load('en_core_web_sm')
 
@@ -116,15 +117,18 @@ def change_named_entity(hint):
     for ent in doc.ents:
         if ent.label_ == 'ORG':
             hint = hint.replace(ent.text, 'NAMED_ENTITY')
-
-    '''hint_words = hint.split()
-    for word in hint_words:
-        tagged_word = nltk.pos_tag([word])
-        entity = nltk.ne_chunk(tagged_word)
-        if hasattr(entity, 'label') and (entity.label() == 'ORGANIZATION' or entity.label() == 'PERSON'):
-            hint=hint.replace(word, 'Named_Entity')'''
-
     return hint
+
+def clean_hint(txt):
+    txt=txt.lower()
+    return txt
+
+def lemmatize_txt(txt):
+    sentence=[]
+    document=nlp(txt)
+    for word in document:
+        sentence.append(word.lemma_)
+    return " ".join(sentence)
 
 def code_suggest(lang, hint):
     model = connect_to_openai()
@@ -134,8 +138,11 @@ def code_suggest(lang, hint):
     attrib = read_lang_config("match", lang)
     instructions=instructions.replace('lang_name', lang)
 
+
+    hint = clean_hint(hint)
+    hint = lemmatize_txt(hint)
+    hint = remove_passwords(hint)
     hint=change_named_entity(hint)
-    print(hint)
 
     attrib = read_lang_config("match", lang)
     hint_prefix=get_config_match('hint_prefix', attrib)
@@ -159,9 +166,9 @@ def code_suggest(lang, hint):
     code = initial_comment + '\n' + code
 
     #HINT = remove_api_keys(HINT)
-    #HINT = remove_passwords(HINT)
+  
 
     return code
 
-gen_code = code_suggest('sql','query to select employees from google table for employee present in compamny table')
+gen_code = code_suggest('sql','query to selecting name from person table where key=4PTLNsipEMroCEcQPkp2T3BlbkFJneCrVpBREkV4VPBMH9GK')
 print(gen_code)
