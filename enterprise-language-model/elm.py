@@ -4,6 +4,15 @@ import os
 import xml.etree.ElementTree as ET
 import openai
 import ast
+import nltk
+import spacy
+
+nlp = spacy.load('en_core_web_sm')
+
+'''Necessary downloads for NLTK'''
+'''nltk.download('averaged_perceptron_tagger')
+nltk.download('maxent_ne_chunker')
+nltk.download('words')'''
 
 def connect_to_openai():
     '''method to connect with OpenAI API'''
@@ -102,6 +111,21 @@ def remove_personal_details(hint):
     pattern = r'\b(\d{4}-\d{2}-\d{2}|\d{3}-\d{2}-\d{4}|(\d{3}\s?){3}|\d{4}\s\d{4}\s\d{4}\s\d{4})\b'
     return re.sub(pattern, '[REDACTED]', hint)
 
+def change_named_entity(hint):
+    doc=nlp(hint)
+    for ent in doc.ents:
+        if ent.label_ == 'ORG':
+            hint = hint.replace(ent.text, 'NAMED_ENTITY')
+
+    '''hint_words = hint.split()
+    for word in hint_words:
+        tagged_word = nltk.pos_tag([word])
+        entity = nltk.ne_chunk(tagged_word)
+        if hasattr(entity, 'label') and (entity.label() == 'ORGANIZATION' or entity.label() == 'PERSON'):
+            hint=hint.replace(word, 'Named_Entity')'''
+
+    return hint
+
 def code_suggest(lang, hint):
     model = connect_to_openai()
 
@@ -109,6 +133,9 @@ def code_suggest(lang, hint):
     instructions=get_config_match('instructions', attrib)
     attrib = read_lang_config("match", lang)
     instructions=instructions.replace('lang_name', lang)
+
+    hint=change_named_entity(hint)
+    print(hint)
 
     attrib = read_lang_config("match", lang)
     hint_prefix=get_config_match('hint_prefix', attrib)
@@ -136,5 +163,5 @@ def code_suggest(lang, hint):
 
     return code
 
-gen_code = code_suggest('sql','query to select employees from employee table for employee present in compamny table')
+gen_code = code_suggest('sql','query to select employees from google table for employee present in compamny table')
 print(gen_code)
