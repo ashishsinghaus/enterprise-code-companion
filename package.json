@@ -1,5 +1,8 @@
 {
   "dependencies": {
-    "openai": "^3.3.0"
+    "axios": "^1.4.0",
+    "openai": "^3.3.0",
+    "xhr2": "^0.2.1",
+    "xmlhttprequest": "^1.8.0"
   }
 }
