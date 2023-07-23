@@ -15,7 +15,7 @@ vscode.workspace.onDidChangeTextDocument(event => {
     // Check if the change was a tab press event
     if (event.contentChanges.some(change => change.text === '    ')) {
         // Implement your logic here
-        vscode.window.showInformationMessage('Tab Key Pressed');
+        vscode.window.showInformationMessage('Enterprise AI Code Companion is in action... ');
 		var lang=''	
 		var editor = vscode.window.activeTextEditor;
 		var filename = editor.document.fileName;
